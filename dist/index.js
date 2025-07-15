@@ -57734,13 +57734,14 @@ async function run() {
 		const octokit = new import_dist_node.Octokit({ auth: token });
 		import_core.info(`Fetching repository ${repoName}...`);
 		let repo;
+		import_core.info(JSON.stringify(repoName));
 		try {
-			const [owner, repoNameOnly] = repoName.split("/");
 			const response = await octokit.repos.get({
-				owner,
-				repo: repoNameOnly
+				owner: organization,
+				repo: repoName
 			});
 			repo = response.data;
+			import_core.info(JSON.stringify(response));
 		} catch (error$1) {
 			if (error$1.status === 404) import_core.setFailed(`Repository ${repoName} not found in organization`);
 			else import_core.setFailed(`Failed to get repository info: ${error$1.message}`);

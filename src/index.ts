@@ -21,13 +21,16 @@ async function run() {
     // 1. 获取仓库信息
     core.info(`Fetching repository ${repoName}...`);
     let repo;
+    // log
+    core.info(JSON.stringify(repoName));
     try {
-      const [owner, repoNameOnly] = repoName.split("/");
       const response = await octokit.repos.get({
-        owner,
-        repo: repoNameOnly,
+        owner: organization,
+        repo: repoName,
       });
       repo = response.data;
+      // log
+      core.info(JSON.stringify(response));
     } catch (error: any) {
       if (error.status === 404) {
         core.setFailed(`Repository ${repoName} not found in organization`);
