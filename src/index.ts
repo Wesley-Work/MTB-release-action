@@ -13,7 +13,7 @@ async function run() {
     // 获取输入参数
     const token = core.getInput("token", { required: true });
     const repoName = core.getInput("repoName", { required: true });
-    const organization = "WesleyWork";
+    const organization = "Wesley-Work";
 
     // 初始化GitHub客户端
     const octokit = new Octokit({ auth: token });
