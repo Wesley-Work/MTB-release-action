@@ -101817,9 +101817,7 @@ async function run() {
 				const changelogContent = fs.readFileSync(changelogPath, "utf8");
 				const versionSections = changelogContent.split(/## 🌈 .+? `\d{4}-\d{2}-\d{2}`/);
 				const versionMatch = changelogContent.match(/## 🌈 .+? `\d{4}-\d{2}-\d{2}`/);
-				import_core.info(`${versionSections}`);
-				import_core.info(`${versionMatch}`);
-				if (versionSections.length > 1 && versionMatch) releaseBody = `${versionMatch[0]}\n\n${versionSections[1].trim()}`;
+				if (versionSections.length > 1 && versionMatch) releaseBody = `${versionMatch[0]}\n${versionSections[1].trim()}`;
 			}
 		} catch (error$1) {
 			import_core.warning(`Failed to parse CHANGELOG.md: ${error$1}`);
@@ -101846,8 +101844,8 @@ async function run() {
 			owner: organization,
 			repo: repoName,
 			tag_name: `v${version$1}`,
-			name: `Release v${version$1}`,
-			body: `${releaseBody}\n\nBuilt packages:\n${zipFiles.join("\n")}${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
+			name: `${repoName} Release v${version$1}`,
+			body: `${releaseBody}\n\n${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
 			draft: false,
 			prerelease: false
 		});

@@ -149,10 +149,8 @@ async function run() {
         const versionMatch = changelogContent.match(
           /## 🌈 .+? `\d{4}-\d{2}-\d{2}`/,
         );
-        core.info(`${versionSections}`);
-        core.info(`${versionMatch}`);
         if (versionSections.length > 1 && versionMatch) {
-          releaseBody = `${versionMatch[0]}\n\n${versionSections[1].trim()}`;
+          releaseBody = `${versionMatch[0]}\n${versionSections[1].trim()}`;
         }
       }
     } catch (error) {
@@ -189,8 +187,8 @@ async function run() {
       owner: organization,
       repo: repoName,
       tag_name: `v${version}`,
-      name: `Release v${version}`,
-      body: `${releaseBody}\n\nBuilt packages:\n${zipFiles.join("\n")}${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
+      name: `${repoName} Release v${version}`,
+      body: `${releaseBody}\n\n${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
       draft: false,
       prerelease: false,
     });
