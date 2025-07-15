@@ -95,7 +95,7 @@ async function run() {
 
     // 3. 进入仓库目录并执行构建
     core.info("Building the project...");
-    await execAsync("pnpm build");
+    await execAsync("pnpm run build");
 
     // 4. 读取package.json并执行所有build:脚本
     core.info("Reading package.json and executing build scripts...");
@@ -105,6 +105,8 @@ async function run() {
     const buildScripts = Object.entries(packageJson.scripts || {})
       .filter(([name]) => name.startsWith("build:"))
       .map(([name, script]) => ({ name, script }));
+
+    core.warning(JSON.stringify(buildScripts));
 
     if (buildScripts.length === 0) {
       core.setFailed("No build: scripts found in package.json");
@@ -120,16 +122,14 @@ async function run() {
 
     const zipFiles = [];
     for (const { name, script } of buildScripts) {
-      const scriptName = name.replace("build:", "");
       core.info(`Running build script: ${name} (${script})`);
-      core.info("Install Dependencies...");
-      await execAsync("pnpm install");
-      await execAsync(script as string);
+      await execAsync(`pnpm run ${name}`);
 
       // 获取版本号
       const version = getPackageVersion();
 
       // 生成zip文件名
+      const scriptName = name.replace("build:", "");
       const scriptPart = scriptName === "build" ? "" : `-${scriptName}`;
       const zipFileName = `${repoName.replace("/", "-")}${scriptPart}-BuildPackage-${version}.zip`;
 

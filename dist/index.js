@@ -101780,7 +101780,7 @@ async function run() {
 			import_core.warning(`Failed to save cache: ${error$1}`);
 		}
 		import_core.info("Building the project...");
-		await execAsync("pnpm build");
+		await execAsync("pnpm run build");
 		import_core.info("Reading package.json and executing build scripts...");
 		const packageJsonPath = path.join(process.cwd(), "package.json");
 		const packageJson$1 = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
@@ -101788,6 +101788,7 @@ async function run() {
 			name,
 			script
 		}));
+		import_core.warning(JSON.stringify(buildScripts));
 		if (buildScripts.length === 0) {
 			import_core.setFailed("No build: scripts found in package.json");
 			return;
@@ -101799,12 +101800,10 @@ async function run() {
 		};
 		const zipFiles = [];
 		for (const { name, script } of buildScripts) {
-			const scriptName = name.replace("build:", "");
 			import_core.info(`Running build script: ${name} (${script})`);
-			import_core.info("Install Dependencies...");
-			await execAsync("pnpm install");
-			await execAsync(script);
+			await execAsync(`pnpm run ${name}`);
 			const version$2 = getPackageVersion();
+			const scriptName = name.replace("build:", "");
 			const scriptPart = scriptName === "build" ? "" : `-${scriptName}`;
 			const zipFileName = `${repoName.replace("/", "-")}${scriptPart}-BuildPackage-${version$2}.zip`;
 			const tempDir = `temp-${scriptName}`;
