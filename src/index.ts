@@ -44,21 +44,22 @@ async function run() {
     core.info(`Cloning repository ${repo.clone_url}...`);
     await execAsync(`git clone ${repo.clone_url} ${repoName}`);
 
-    // core.info("Checking npm availability...");
-    // try {
-    //   await execAsync("npm --version");
-    // } catch {
-    //   core.info("Installing npm...");
-    //   await execAsync("npm install -g npm");
-    // }
+    core.info("Checking pnpm availability...");
+    try {
+      await execAsync("pnpm --version");
+    } catch {
+      core.info("Installing pnpm...");
+      await execAsync("npm install -g pnpm");
+    }
 
     core.info("Install Dependencies...");
     process.chdir(repoName);
-    await execAsync("npm install");
+    await execAsync("pnpm add -D vue-tsc vite");
+    await execAsync("pnpm install");
 
     // 3. 进入仓库目录并执行构建
     core.info("Building the project...");
-    await execAsync("npm build");
+    await execAsync("pnpm build");
 
     // 4. 读取package.json并执行所有build:脚本
     core.info("Reading package.json and executing build scripts...");

@@ -57749,11 +57749,19 @@ async function run() {
 		}
 		import_core.info(`Cloning repository ${repo.clone_url}...`);
 		await execAsync(`git clone ${repo.clone_url} ${repoName}`);
+		import_core.info("Checking pnpm availability...");
+		try {
+			await execAsync("pnpm --version");
+		} catch {
+			import_core.info("Installing pnpm...");
+			await execAsync("npm install -g pnpm");
+		}
 		import_core.info("Install Dependencies...");
 		process.chdir(repoName);
-		await execAsync("npm install");
+		await execAsync("pnpm add -D vue-tsc vite");
+		await execAsync("pnpm install");
 		import_core.info("Building the project...");
-		await execAsync("npm build");
+		await execAsync("pnpm build");
 		import_core.info("Reading package.json and executing build scripts...");
 		const packageJsonPath = path.join(process.cwd(), "package.json");
 		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
