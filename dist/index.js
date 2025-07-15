@@ -57749,18 +57749,11 @@ async function run() {
 		}
 		import_core.info(`Cloning repository ${repo.clone_url}...`);
 		await execAsync(`git clone ${repo.clone_url} ${repoName}`);
-		import_core.info("Checking pnpm availability...");
-		try {
-			await execAsync("pnpm --version");
-		} catch {
-			import_core.info("Installing pnpm...");
-			await execAsync("npm install -g pnpm");
-		}
 		import_core.info("Install Dependencies...");
 		process.chdir(repoName);
-		await execAsync("pnpm install");
+		await execAsync("npm install");
 		import_core.info("Building the project...");
-		await execAsync("pnpm build");
+		await execAsync("npm build");
 		import_core.info("Reading package.json and executing build scripts...");
 		const packageJsonPath = path.join(process.cwd(), "package.json");
 		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
