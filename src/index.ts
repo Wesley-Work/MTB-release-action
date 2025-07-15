@@ -1,10 +1,21 @@
 import * as core from "@actions/core";
-import * as github from "@actions/github";
+import * as cache from "@actions/cache";
 import path from "path";
 import { Octokit } from "@octokit/rest";
 import fs from "fs";
 import { promisify } from "util";
 import { exec } from "child_process";
+
+// 简单字符串哈希函数
+function hashCode(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
 
 const execAsync = promisify(exec);
 
@@ -54,8 +65,34 @@ async function run() {
 
     core.info("Install Dependencies...");
     process.chdir(repoName);
-    await execAsync("pnpm add -D vue-tsc vite");
+
+    // 设置缓存
+    const cacheKey = `pnpm-store-${process.platform}-${hashCode(fs.readFileSync("pnpm-lock.yaml", "utf8"))}`;
+    const pnpmStorePath = path.join(
+      process.env.HOME || process.env.USERPROFILE || "",
+      ".pnpm-store",
+    );
+
+    // 尝试恢复缓存
+    const cacheHit = await cache.restoreCache([pnpmStorePath], cacheKey);
+    if (cacheHit) {
+      core.info(`Cache restored from key: ${cacheKey}`);
+    } else {
+      core.info("No cache found, will create new cache after installation");
+    }
+
+    // 安装依赖
     await execAsync("pnpm install");
+
+    // 保存缓存
+    if (!cacheHit) {
+      try {
+        await cache.saveCache([pnpmStorePath], cacheKey);
+        core.info(`Cache saved with key: ${cacheKey}`);
+      } catch (error) {
+        core.warning(`Failed to save cache: ${error}`);
+      }
+    }
 
     // 3. 进入仓库目录并执行构建
     core.info("Building the project...");
