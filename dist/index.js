@@ -101815,8 +101815,11 @@ async function run() {
 			const changelogPath = path.join(process.cwd(), repoName, "CHANGELOG.md");
 			if (fs.existsSync(changelogPath)) {
 				const changelogContent = fs.readFileSync(changelogPath, "utf8");
-				const versionMatch = changelogContent.match(/(## 🌈 \d+\.\d+\.\d+ `\d{4}-\d{2}-\d{2}`)\n([\s\S]+?)(?=\n## 🌈 |$)/);
-				if (versionMatch) releaseBody = `${versionMatch[1]}\n\n${versionMatch[2].trim()}`;
+				const versionSections = changelogContent.split(/## 🌈 .+? `\d{4}-\d{2}-\d{2}`/);
+				const versionMatch = changelogContent.match(/## 🌈 .+? `\d{4}-\d{2}-\d{2}`/);
+				import_core.info(`${versionSections}`);
+				import_core.info(`${versionMatch}`);
+				if (versionSections.length > 1 && versionMatch) releaseBody = `${versionMatch[0]}\n\n${versionSections[1].trim()}`;
 			}
 		} catch (error$1) {
 			import_core.warning(`Failed to parse CHANGELOG.md: ${error$1}`);
