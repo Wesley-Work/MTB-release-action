@@ -101767,7 +101767,8 @@ async function run() {
 		import_core.info("Install Dependencies...");
 		process.chdir(repoName);
 		const cacheKey = `pnpm-store-${process.platform}-${hashCode(fs.readFileSync("pnpm-lock.yaml", "utf8"))}`;
-		const pnpmStorePath = path.join(process.env.HOME || process.env.USERPROFILE || "", ".pnpm-store");
+		const pnpmStorePath = (await execAsync("pnpm store path")).stdout.trim();
+		await execAsync(`mkdir -p ${pnpmStorePath}`);
 		const cacheHit = await import_cache.restoreCache([pnpmStorePath], cacheKey);
 		if (cacheHit) import_core.info(`Cache restored from key: ${cacheKey}`);
 		else import_core.info("No cache found, will create new cache after installation");
@@ -101800,6 +101801,8 @@ async function run() {
 		for (const { name, script } of buildScripts) {
 			const scriptName = name.replace("build:", "");
 			import_core.info(`Running build script: ${name} (${script})`);
+			import_core.info("Install Dependencies...");
+			await execAsync("pnpm install");
 			await execAsync(script);
 			const version$2 = getPackageVersion();
 			const scriptPart = scriptName === "build" ? "" : `-${scriptName}`;

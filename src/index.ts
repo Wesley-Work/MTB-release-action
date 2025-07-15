@@ -68,10 +68,9 @@ async function run() {
 
     // 设置缓存
     const cacheKey = `pnpm-store-${process.platform}-${hashCode(fs.readFileSync("pnpm-lock.yaml", "utf8"))}`;
-    const pnpmStorePath = path.join(
-      process.env.HOME || process.env.USERPROFILE || "",
-      ".pnpm-store",
-    );
+    // 获取pnpm store路径
+    const pnpmStorePath = (await execAsync("pnpm store path")).stdout.trim();
+    await execAsync(`mkdir -p ${pnpmStorePath}`);
 
     // 尝试恢复缓存
     const cacheHit = await cache.restoreCache([pnpmStorePath], cacheKey);
@@ -123,6 +122,8 @@ async function run() {
     for (const { name, script } of buildScripts) {
       const scriptName = name.replace("build:", "");
       core.info(`Running build script: ${name} (${script})`);
+      core.info("Install Dependencies...");
+      await execAsync("pnpm install");
       await execAsync(script as string);
 
       // 获取版本号
