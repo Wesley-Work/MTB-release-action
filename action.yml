@@ -1,0 +1,13 @@
+name: "Build and Release Action"
+description: "Automatically build and release when PR is merged"
+inputs:
+  token:
+    description: "GitHub token for authentication"
+    required: true
+  repoName:
+    description: "Repository name in WesleyWork organization"
+    required: true
+runs:
+  using: "node20"
+  main: "dist/index.js"
+  pre: "pnpm install"
