@@ -44,6 +44,14 @@ async function run() {
     core.info(`Cloning repository ${repo.clone_url}...`);
     await execAsync(`git clone ${repo.clone_url} ${repoName}`);
 
+    core.info("Checking pnpm availability...");
+    try {
+      await execAsync("pnpm --version");
+    } catch {
+      core.info("Installing pnpm...");
+      await execAsync("npm install -g pnpm");
+    }
+
     // 3. 进入仓库目录并执行构建
     core.info("Building the project...");
     process.chdir(repoName);
