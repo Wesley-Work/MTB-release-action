@@ -57756,9 +57756,11 @@ async function run() {
 			import_core.info("Installing pnpm...");
 			await execAsync("npm install -g pnpm");
 		}
-		import_core.info("Building the project...");
+		import_core.info("Install Dependencies...");
 		process.chdir(repoName);
-		await execAsync("pnpm install && pnpm build");
+		await execAsync("pnpm install");
+		import_core.info("Building the project...");
+		await execAsync("pnpm build");
 		import_core.info("Reading package.json and executing build scripts...");
 		const packageJsonPath = path.join(process.cwd(), "package.json");
 		const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));

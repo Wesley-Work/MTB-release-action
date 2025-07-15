@@ -52,10 +52,13 @@ async function run() {
       await execAsync("npm install -g pnpm");
     }
 
+    core.info("Install Dependencies...");
+    process.chdir(repoName);
+    await execAsync("pnpm install");
+
     // 3. 进入仓库目录并执行构建
     core.info("Building the project...");
-    process.chdir(repoName);
-    await execAsync("pnpm install && pnpm build");
+    await execAsync("pnpm build");
 
     // 4. 读取package.json并执行所有build:脚本
     core.info("Reading package.json and executing build scripts...");
