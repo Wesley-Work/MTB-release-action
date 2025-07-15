@@ -1,5 +1,5 @@
-import * as core from "@actions/core";
-import * as cache from "@actions/cache";
+import core from "@actions/core";
+import cache from "@actions/cache";
 import path from "path";
 import { Octokit } from "@octokit/rest";
 import fs from "fs";
@@ -29,19 +29,15 @@ async function run() {
     // 初始化GitHub客户端
     const octokit = new Octokit({ auth: token });
 
-    // 1. 获取仓库信息
-    core.info(`Fetching repository ${repoName}...`);
+    // 获取仓库信息
+    core.notice(`Fetching repository ${repoName}...`);
     let repo;
-    // log
-    core.info(JSON.stringify(repoName));
     try {
       const response = await octokit.repos.get({
         owner: organization,
         repo: repoName,
       });
       repo = response.data;
-      // log
-      core.info(JSON.stringify(response));
     } catch (error: any) {
       if (error.status === 404) {
         core.setFailed(`Repository ${repoName} not found in organization`);
@@ -52,7 +48,7 @@ async function run() {
     }
 
     // 2. 克隆仓库
-    core.info(`Cloning repository ${repo.clone_url}...`);
+    core.notice(`Cloning repository ${repo.clone_url}...`);
     await execAsync(`git clone ${repo.clone_url} ${repoName}`);
 
     core.info("Checking pnpm availability...");
@@ -63,7 +59,7 @@ async function run() {
       await execAsync("npm install -g pnpm");
     }
 
-    core.info("Install Dependencies...");
+    core.notice("Install Dependencies...");
     process.chdir(repoName);
 
     // 设置缓存
@@ -77,7 +73,7 @@ async function run() {
     if (cacheHit) {
       core.info(`Cache restored from key: ${cacheKey}`);
     } else {
-      core.info("No cache found, will create new cache after installation");
+      core.warning("No cache found, will create new cache after installation");
     }
 
     // 安装依赖
@@ -93,17 +89,14 @@ async function run() {
       }
     }
 
-    // 3. 进入仓库目录并执行构建
-    core.info("Building the project...");
-    await execAsync("pnpm run build");
-
-    // 4. 读取package.json并执行所有build:脚本
-    core.info("Reading package.json and executing build scripts...");
+    // 进入仓库目录并执行构建
+    // 读取package.json并执行所有build脚本
+    core.notice("Reading package.json and executing build scripts...");
     const packageJsonPath = path.join(process.cwd(), "package.json");
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
     const buildScripts = Object.entries(packageJson.scripts || {})
-      .filter(([name]) => name.startsWith("build:"))
+      .filter(([name]) => name.startsWith("build"))
       .map(([name, script]) => ({ name, script }));
 
     core.warning(JSON.stringify(buildScripts));
@@ -122,16 +115,17 @@ async function run() {
 
     const zipFiles = [];
     for (const { name, script } of buildScripts) {
-      core.info(`Running build script: ${name} (${script})`);
+      core.notice(`Running build script: ${name} (${script})`);
       await execAsync(`pnpm run ${name}`);
 
       // 获取版本号
       const version = getPackageVersion();
 
-      // 生成zip文件名
       const scriptName = name.replace("build:", "");
       const scriptPart = scriptName === "build" ? "" : `-${scriptName}`;
-      const zipFileName = `${repoName.replace("/", "-")}${scriptPart}-BuildPackage-${version}.zip`;
+
+      // 压缩包文件名，REPO_NAME(-MODE)-BuildPackage-VERSION.zip
+      const zipFileName = `${repoName.replace("/", "-")}${scriptPart.toUpperCase()}-BuildPackage-${version.replace(/\./g, "_")}.zip`;
 
       // 使用临时目录避免冲突
       const tempDir = `temp-${scriptName}`;
@@ -143,24 +137,24 @@ async function run() {
     }
     process.chdir("..");
 
-    // 5. 读取CHANGELOG.md获取最新版本日志
-    let releaseBody = "Automated release created by MTB Release Action";
+    // 读取目标仓库的CHANGELOG.md文件，获取最新版本日志
+    let releaseBody = "";
     try {
       const changelogPath = path.join(process.cwd(), repoName, "CHANGELOG.md");
       if (fs.existsSync(changelogPath)) {
         const changelogContent = fs.readFileSync(changelogPath, "utf8");
-        const versionSections = changelogContent.split(
-          /## 🌈 .+? `\d{4}-\d{2}-\d{2}`/,
+        const versionMatch = changelogContent.match(
+          /(## 🌈 \d+\.\d+\.\d+ `\d{4}-\d{2}-\d{2}`)\n([\s\S]+?)(?=\n## 🌈 |$)/,
         );
-        if (versionSections.length > 1) {
-          releaseBody = versionSections[1].trim();
+        if (versionMatch) {
+          releaseBody = `${versionMatch[1]}\n\n${versionMatch[2].trim()}`;
         }
       }
     } catch (error) {
       core.warning(`Failed to parse CHANGELOG.md: ${error}`);
     }
 
-    // 6. 获取上一个Release的tag
+    // 获取上一个Release的tag
     let compareUrl = "";
     try {
       const releases = await octokit.repos.listReleases({
@@ -178,24 +172,27 @@ async function run() {
       core.warning(`Failed to get previous release: ${error}`);
     }
 
-    // 7. 创建Release并上传所有压缩包
-    core.info("Creating release...");
+    // 创建Release并上传所有压缩包
+    core.notice("Creating release...");
     // 获取版本号
     const version = getPackageVersion(path.join(process.cwd(), repoName));
+
+    // 获取当前CI运行ID
+    const runId = process.env.GITHUB_RUN_ID || "unknown";
 
     const releaseResponse = await octokit.repos.createRelease({
       owner: organization,
       repo: repoName,
       tag_name: `v${version}`,
       name: `Release v${version}`,
-      body: `${releaseBody}\n\nBuilt packages:\n${zipFiles.join("\n")}${compareUrl}`,
+      body: `${releaseBody}\n\nBuilt packages:\n${zipFiles.join("\n")}${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
       draft: false,
       prerelease: false,
     });
 
     // 上传所有压缩包
     for (const zipFile of zipFiles) {
-      core.info(`Uploading release asset: ${zipFile}...`);
+      core.notice(`Uploading release asset: ${zipFile}...`);
       await octokit.repos.uploadReleaseAsset({
         owner: organization,
         repo: repoName,
@@ -205,7 +202,7 @@ async function run() {
       });
     }
 
-    core.info("Release created successfully!");
+    core.notice("Release created successfully!");
   } catch (error) {
     core.setFailed(
       error instanceof Error ? error.message : "Unknown error occurred",
