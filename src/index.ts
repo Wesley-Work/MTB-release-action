@@ -125,7 +125,7 @@ async function run() {
       const scriptPart = scriptName === "build" ? "" : `-${scriptName}`;
 
       // 压缩包文件名，REPO_NAME(-MODE)-BuildPackage-VERSION.zip
-      const zipFileName = `${repoName.replace("/", "-")}${scriptPart.toUpperCase()}-BuildPackage-${version.replace(/\./g, "_")}.zip`;
+      const zipFileName = `${repoName.replace("/", "-")}${scriptPart.toUpperCase()}-BuildPackage-${version.replace(/\.-/g, "_")}.zip`;
 
       // 使用临时目录避免冲突
       const tempDir = `temp-${scriptName}`;
@@ -166,7 +166,7 @@ async function run() {
         per_page: 2,
       });
 
-      if (releases.data.length > 1) {
+      if (releases.data.length >= 1) {
         const previousTag = releases.data[1].tag_name;
         const currentTag = `v${new Date().toISOString().split("T")[0]}`;
         compareUrl = `\n\n[Compare with previous version](https://github.com/${organization}/${repoName}/compare/${previousTag}...${currentTag})`;
@@ -186,9 +186,9 @@ async function run() {
     const releaseResponse = await octokit.repos.createRelease({
       owner: organization,
       repo: repoName,
-      tag_name: `v${version}`,
+      tag_name: `${version}`,
       name: `${repoName} Release v${version}`,
-      body: `${releaseBody}\n\n${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
+      body: `${releaseBody}\n\n${compareUrl}\n\n##### _CI Run ID: \`[${runId}](https://github.com/${organization}/${repoName}/actions/runs/${runId})\`_`,
       draft: false,
       prerelease: false,
     });

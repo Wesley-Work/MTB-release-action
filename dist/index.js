@@ -101801,7 +101801,7 @@ async function run() {
 			const version$2 = getPackageVersion();
 			const scriptName = name.replace("build:", "");
 			const scriptPart = scriptName === "build" ? "" : `-${scriptName}`;
-			const zipFileName = `${repoName.replace("/", "-")}${scriptPart.toUpperCase()}-BuildPackage-${version$2.replace(/\./g, "_")}.zip`;
+			const zipFileName = `${repoName.replace("/", "-")}${scriptPart.toUpperCase()}-BuildPackage-${version$2.replace(/\.-/g, "_")}.zip`;
 			const tempDir = `temp-${scriptName}`;
 			await execAsync(`mkdir -p ${tempDir}`);
 			await execAsync(`cp -r dist/* ${tempDir}/`);
@@ -101829,7 +101829,7 @@ async function run() {
 				repo: repoName,
 				per_page: 2
 			});
-			if (releases.data.length > 1) {
+			if (releases.data.length >= 1) {
 				const previousTag = releases.data[1].tag_name;
 				const currentTag = `v${(/* @__PURE__ */ new Date()).toISOString().split("T")[0]}`;
 				compareUrl = `\n\n[Compare with previous version](https://github.com/${organization}/${repoName}/compare/${previousTag}...${currentTag})`;
@@ -101843,9 +101843,9 @@ async function run() {
 		const releaseResponse = await octokit.repos.createRelease({
 			owner: organization,
 			repo: repoName,
-			tag_name: `v${version$1}`,
+			tag_name: `${version$1}`,
 			name: `${repoName} Release v${version$1}`,
-			body: `${releaseBody}\n\n${compareUrl}\n\n<small>CI Run ID: ${runId}</small>`,
+			body: `${releaseBody}\n\n${compareUrl}\n\n##### _CI Run ID: \`[${runId}](https://github.com/${organization}/${repoName}/actions/runs/${runId})\`_`,
 			draft: false,
 			prerelease: false
 		});
